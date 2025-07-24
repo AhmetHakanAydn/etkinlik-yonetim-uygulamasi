@@ -1,8 +1,58 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@model EtkinlikYonetimi.Web.Models.ViewModels.EventListViewModel
+@{
+    ViewData["Title"] = Model.PageTitle ?? "Etkinlikler";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="text-center mb-4">
+    <h1 class="display-4 text-primary">@Model.PageTitle</h1>
+    <p class="lead">@Model.PageDescription</p>
 </div>
+
+@if (Model.Events.Any())
+{
+    <div class="row">
+        @foreach (var eventItem in Model.Events)
+        {
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    @if (!string.IsNullOrEmpty(eventItem.Image))
+                    {
+                        <img src="@eventItem.Image" class="card-img-top" alt="@eventItem.Title" style="height: 200px; object-fit: cover;">
+                    }
+                    else
+                    {
+                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                            <i class="fas fa-calendar-alt fa-3x text-muted"></i>
+                        </div>
+                    }
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">@eventItem.Title</h5>
+                        <p class="card-text text-muted">
+                            <i class="fas fa-clock"></i> @eventItem.StartDate.ToString("dd MMMM yyyy, HH:mm", new System.Globalization.CultureInfo("tr-TR"))
+                        </p>
+                        @if (!string.IsNullOrEmpty(eventItem.ShortDescription))
+                        {
+                            <p class="card-text">@eventItem.ShortDescription</p>
+                        }
+                        <div class="mt-auto">
+                            <a asp-controller="Event" asp-action="Detail" asp-route-id="@eventItem.Id" class="btn btn-primary">Detayları Gör</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="text-center mt-5">
+        <div class="alert alert-info">
+            <h4>Henüz etkinlik bulunmuyor</h4>
+            <p>Şu anda görüntülenecek aktif etkinlik bulunmamaktadır.</p>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+}
