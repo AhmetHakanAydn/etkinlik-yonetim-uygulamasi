@@ -22,14 +22,14 @@ namespace EtkinlikYonetimi.Data.Context
             {
                 entity.HasKey(e => e.Id);
                 entity.HasIndex(e => e.Email).IsUnique();
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("datetime('now')");
             });
 
             // Event entity configuration
             modelBuilder.Entity<Event>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("datetime('now')");
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
                 
                 // Configure relationship

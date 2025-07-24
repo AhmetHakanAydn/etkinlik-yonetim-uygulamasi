@@ -1,6 +1,31 @@
+using Microsoft.EntityFrameworkCore;
+using EtkinlikYonetimi.Data.Context;
+using EtkinlikYonetimi.Data.Repositories;
+using EtkinlikYonetimi.Business.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddDbContext<EtkinlikYonetimiDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Register repositories
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IEventRepository, EventRepository>();
+
+// Register services
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IEventService, EventService>();
+
+// Add session support for authentication
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
@@ -18,7 +43,14 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseSession();
+
 app.UseAuthorization();
+
+// Configure areas routing
+app.MapControllerRoute(
+    name: "areas",
+    pattern: "{area:exists}/{controller=Home}/{action=Index}/{id?}");
 
 app.MapControllerRoute(
     name: "default",
