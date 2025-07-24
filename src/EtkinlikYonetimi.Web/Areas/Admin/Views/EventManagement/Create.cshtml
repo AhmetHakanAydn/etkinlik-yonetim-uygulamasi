@@ -1,0 +1,142 @@
+@model EventDto
+@{
+    ViewData["Title"] = Model.Id == 0 ? "Yeni Etkinlik" : "Etkinlik Düzenle";
+    bool isEdit = Model.Id > 0;
+}
+
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <div class="card shadow">
+            <div class="card-header @(isEdit ? "bg-primary" : "bg-success") text-white">
+                <h4>
+                    <i class="fas @(isEdit ? "fa-edit" : "fa-plus")"></i> 
+                    @(isEdit ? "Etkinlik Düzenle" : "Yeni Etkinlik Oluştur")
+                </h4>
+            </div>
+            <div class="card-body">
+                <form asp-action="@(isEdit ? "Edit" : "Create")" method="post" enctype="multipart/form-data">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                    
+                    @if (isEdit)
+                    {
+                        <input asp-for="Id" type="hidden" />
+                        <input asp-for="UserId" type="hidden" />
+                        <input asp-for="CreatedAt" type="hidden" />
+                        <input asp-for="Image" type="hidden" />
+                    }
+
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label asp-for="Title" class="form-label"></label>
+                            <input asp-for="Title" class="form-control" maxlength="255" />
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="StartDate" class="form-label"></label>
+                            <input asp-for="StartDate" class="form-control" type="datetime-local" />
+                            <span asp-validation-for="StartDate" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="EndDate" class="form-label"></label>
+                            <input asp-for="EndDate" class="form-control" type="datetime-local" />
+                            <span asp-validation-for="EndDate" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="ImageFile" class="form-label"></label>
+                        <input asp-for="ImageFile" class="form-control" type="file" accept=".jpg,.jpeg,.png" />
+                        <div class="form-text">Maksimum 2MB boyutunda JPG, JPEG veya PNG formatında resim yükleyebilirsiniz.</div>
+                        <span asp-validation-for="ImageFile" class="text-danger"></span>
+                        
+                        @if (isEdit && !string.IsNullOrEmpty(Model.Image))
+                        {
+                            <div class="mt-2">
+                                <small class="text-muted">Mevcut resim:</small><br>
+                                <img src="@Model.Image" alt="Current Image" class="img-thumbnail" style="max-width: 200px; max-height: 150px;">
+                            </div>
+                        }
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="ShortDescription" class="form-label"></label>
+                        <textarea asp-for="ShortDescription" class="form-control" rows="3" maxlength="512"></textarea>
+                        <div class="form-text">Etkinlik listesinde görünecek kısa açıklama (maksimum 512 karakter).</div>
+                        <span asp-validation-for="ShortDescription" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="LongDescription" class="form-label"></label>
+                        <textarea asp-for="LongDescription" class="form-control" rows="8" id="longDescriptionEditor"></textarea>
+                        <div class="form-text">Etkinlik detay sayfasında görünecek uzun açıklama. HTML formatında yazabilirsiniz.</div>
+                        <span asp-validation-for="LongDescription" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                            <label asp-for="IsActive" class="form-check-label"></label>
+                        </div>
+                        <div class="form-text">Aktif etkinlikler sitede görüntülenir.</div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a asp-action="Index" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times"></i> İptal
+                        </a>
+                        <button type="submit" class="btn @(isEdit ? "btn-primary" : "btn-success")">
+                            <i class="fas @(isEdit ? "fa-save" : "fa-plus")"></i> 
+                            @(isEdit ? "Güncelle" : "Oluştur")
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <!-- TinyMCE for rich text editing -->
+    <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <script>
+        tinymce.init({
+            selector: '#longDescriptionEditor',
+            height: 300,
+            menubar: false,
+            plugins: [
+                'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                'insertdatetime', 'media', 'table', 'help', 'wordcount'
+            ],
+            toolbar: 'undo redo | blocks | ' +
+                'bold italic backcolor | alignleft aligncenter ' +
+                'alignright alignjustify | bullist numlist outdent indent | ' +
+                'removeformat | help',
+            content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif; font-size: 14px; }',
+            language: 'tr'
+        });
+
+        // Character counter for short description
+        const shortDescTextarea = document.querySelector('textarea[asp-for="ShortDescription"]');
+        if (shortDescTextarea) {
+            const counter = document.createElement('small');
+            counter.className = 'text-muted';
+            shortDescTextarea.parentNode.appendChild(counter);
+            
+            function updateCounter() {
+                const remaining = 512 - shortDescTextarea.value.length;
+                counter.textContent = `${shortDescTextarea.value.length}/512 karakter`;
+                counter.style.color = remaining < 50 ? 'red' : '';
+            }
+            
+            shortDescTextarea.addEventListener('input', updateCounter);
+            updateCounter();
+        }
+    </script>
+}

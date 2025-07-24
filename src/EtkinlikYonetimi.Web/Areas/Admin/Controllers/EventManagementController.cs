@@ -39,7 +39,8 @@ namespace EtkinlikYonetimi.Web.Areas.Admin.Controllers
             {
                 UserId = currentUser.Id,
                 StartDate = DateTime.Now.AddDays(1),
-                EndDate = DateTime.Now.AddDays(1).AddHours(2)
+                EndDate = DateTime.Now.AddDays(1).AddHours(2),
+                IsActive = true
             };
 
             return View(model);
