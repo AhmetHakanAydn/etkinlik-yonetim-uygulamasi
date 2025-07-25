@@ -1,99 +1,146 @@
+using EtkinlikYonetimi.Business.Constants;
 using EtkinlikYonetimi.Business.DTOs;
 using EtkinlikYonetimi.Business.Helpers;
-using EtkinlikYonetimi.Business.Services;
+using EtkinlikYonetimi.Business.Mappers;
+using EtkinlikYonetimi.Business.Validators;
 using EtkinlikYonetimi.Data.Entities;
 using EtkinlikYonetimi.Data.Repositories;
-using System;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace EtkinlikYonetimi.Business.Services
 {
+    /// <summary>
+    /// Service for managing user-related operations
+    /// </summary>
     public class UserService : IUserService
     {
         private readonly IUnitOfWork _unitOfWork;
 
+        /// <summary>
+        /// Initializes a new instance of the UserService class
+        /// </summary>
+        /// <param name="unitOfWork">The unit of work for data access</param>
         public UserService(IUnitOfWork unitOfWork)
         {
-            _unitOfWork = unitOfWork;
+            _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         }
 
+        /// <summary>
+        /// Registers a new user in the system
+        /// </summary>
+        /// <param name="registerDto">User registration information</param>
+        /// <returns>A result indicating success or failure with the created user</returns>
         public async Task<(bool IsSuccess, string Message, UserDto? User)> RegisterAsync(UserRegisterDto registerDto)
         {
             try
             {
                 // Validate password requirements
-                if (!IsPasswordValid(registerDto.Password))
+                if (!ValidationHelper.IsPasswordValid(registerDto.Password))
                 {
-                    return (false, "Parola en az 8 karakter olmalı, büyük harf, küçük harf ve rakam içermelidir.", null);
+                    return (false, ValidationConstants.Password.RequirementsMessage, null);
                 }
 
                 // Check if email already exists
-                if (await _unitOfWork.Users.IsEmailExistsAsync(registerDto.Email))
+                if (await IsEmailAlreadyInUse(registerDto.Email))
                 {
-                    return (false, "Bu email adresi zaten kullanılmaktadır.", null);
+                    return (false, ErrorMessages.User.EmailAlreadyExists, null);
                 }
 
-                // Create user entity
-                var user = new User
-                {
-                    Email = registerDto.Email.ToLower(),
-                    Password = EncryptionHelper.EncryptPassword(registerDto.Password),
-                    FirstName = registerDto.FirstName,
-                    LastName = registerDto.LastName,
-                    BirthDate = registerDto.BirthDate,
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                await _unitOfWork.Users.AddAsync(user);
-                await _unitOfWork.SaveChangesAsync();
-
-                var userDto = MapToDto(user);
-                return (true, "Kullanıcı başarıyla kaydedildi.", userDto);
+                // Create and save the user
+                var user = await CreateUserFromRegisterDto(registerDto);
+                var userDto = UserMapper.MapToDto(user);
+                
+                return (true, SuccessMessages.User.RegistrationSuccessful, userDto);
             }
             catch (Exception ex)
             {
-                return (false, "Kullanıcı kaydı sırasında bir hata oluştu: " + ex.Message, null);
+                return (false, ErrorMessages.User.RegistrationError + ex.Message, null);
             }
         }
 
+        /// <summary>
+        /// Creates a new user entity from registration DTO and saves it to the database
+        /// </summary>
+        /// <param name="registerDto">The registration DTO</param>
+        /// <returns>The created user entity</returns>
+        private async Task<User> CreateUserFromRegisterDto(UserRegisterDto registerDto)
+        {
+            var encryptedPassword = EncryptionHelper.EncryptPassword(registerDto.Password);
+            var user = UserMapper.MapFromRegisterDto(registerDto, encryptedPassword);
+
+            await _unitOfWork.Users.AddAsync(user);
+            await _unitOfWork.SaveChangesAsync();
+
+            return user;
+        }
+
+        /// <summary>
+        /// Checks if an email is already in use by another user
+        /// </summary>
+        /// <param name="email">The email to check</param>
+        /// <param name="excludeUserId">Optional user ID to exclude from the check</param>
+        /// <returns>True if email is already in use, false otherwise</returns>
+        private async Task<bool> IsEmailAlreadyInUse(string email, int? excludeUserId = null)
+        {
+            return await _unitOfWork.Users.IsEmailExistsAsync(email.ToLowerInvariant(), excludeUserId);
+        }
+
+        /// <summary>
+        /// Authenticates a user and returns their information
+        /// </summary>
+        /// <param name="loginDto">User login credentials</param>
+        /// <returns>A result indicating success or failure with the user information</returns>
         public async Task<(bool IsSuccess, string Message, UserDto? User)> LoginAsync(UserLoginDto loginDto)
         {
             try
             {
-                var user = await _unitOfWork.Users.GetByEmailAsync(loginDto.Email.ToLower());
+                var user = await _unitOfWork.Users.GetByEmailAsync(loginDto.Email.ToLowerInvariant());
                 
                 if (user == null)
                 {
-                    return (false, "Email adresi bulunamadı.", null);
+                    return (false, ErrorMessages.User.EmailNotFound, null);
                 }
 
                 if (!EncryptionHelper.VerifyPassword(loginDto.Password, user.Password))
                 {
-                    return (false, "Parola hatalı.", null);
+                    return (false, ErrorMessages.User.IncorrectPassword, null);
                 }
 
-                var userDto = MapToDto(user);
-                return (true, "Giriş başarılı.", userDto);
+                var userDto = UserMapper.MapToDto(user);
+                return (true, SuccessMessages.User.LoginSuccessful, userDto);
             }
             catch (Exception ex)
             {
-                return (false, "Giriş sırasında bir hata oluştu: " + ex.Message, null);
+                return (false, ErrorMessages.User.LoginError + ex.Message, null);
             }
         }
 
+        /// <summary>
+        /// Gets a user by their ID
+        /// </summary>
+        /// <param name="id">The user ID</param>
+        /// <returns>The user DTO if found, null otherwise</returns>
         public async Task<UserDto?> GetUserByIdAsync(int id)
         {
             var user = await _unitOfWork.Users.GetByIdAsync(id);
-            return user != null ? MapToDto(user) : null;
+            return user != null ? UserMapper.MapToDto(user) : null;
         }
 
+        /// <summary>
+        /// Gets a user by their email address
+        /// </summary>
+        /// <param name="email">The user's email address</param>
+        /// <returns>The user DTO if found, null otherwise</returns>
         public async Task<UserDto?> GetUserByEmailAsync(string email)
         {
-            var user = await _unitOfWork.Users.GetByEmailAsync(email.ToLower());
-            return user != null ? MapToDto(user) : null;
+            var user = await _unitOfWork.Users.GetByEmailAsync(email.ToLowerInvariant());
+            return user != null ? UserMapper.MapToDto(user) : null;
         }
 
+        /// <summary>
+        /// Updates an existing user's information
+        /// </summary>
+        /// <param name="userDto">The updated user information</param>
+        /// <returns>A result indicating success or failure</returns>
         public async Task<(bool IsSuccess, string Message)> UpdateUserAsync(UserDto userDto)
         {
             try
@@ -101,64 +148,57 @@ namespace EtkinlikYonetimi.Business.Services
                 var user = await _unitOfWork.Users.GetByIdAsync(userDto.Id);
                 if (user == null)
                 {
-                    return (false, "Kullanıcı bulunamadı.");
+                    return (false, ErrorMessages.User.UserNotFound);
                 }
 
                 // Check if email is being changed and if the new email already exists
-                if (user.Email != userDto.Email.ToLower())
+                if (await IsEmailBeingChangedToExistingEmail(user, userDto))
                 {
-                    if (await _unitOfWork.Users.IsEmailExistsAsync(userDto.Email, userDto.Id))
-                    {
-                        return (false, "Bu email adresi zaten kullanılmaktadır.");
-                    }
+                    return (false, ErrorMessages.User.EmailAlreadyExists);
                 }
 
-                // Update user properties
-                user.Email = userDto.Email.ToLower();
-                user.FirstName = userDto.FirstName;
-                user.LastName = userDto.LastName;
-                user.BirthDate = userDto.BirthDate;
+                // Update user properties using mapper
+                UserMapper.UpdateFromDto(user, userDto);
 
                 _unitOfWork.Users.Update(user);
                 await _unitOfWork.SaveChangesAsync();
 
-                return (true, "Kullanıcı bilgileri başarıyla güncellendi.");
+                return (true, SuccessMessages.User.UpdateSuccessful);
             }
             catch (Exception ex)
             {
-                return (false, "Güncelleme sırasında bir hata oluştu: " + ex.Message);
+                return (false, ErrorMessages.User.UpdateError + ex.Message);
             }
         }
 
+        /// <summary>
+        /// Checks if the email is being changed to an email that already exists
+        /// </summary>
+        /// <param name="currentUser">The current user entity</param>
+        /// <param name="updatedUserDto">The updated user DTO</param>
+        /// <returns>True if email is being changed to an existing email, false otherwise</returns>
+        private async Task<bool> IsEmailBeingChangedToExistingEmail(User currentUser, UserDto updatedUserDto)
+        {
+            var newEmailLower = updatedUserDto.Email.ToLowerInvariant();
+            var currentEmailLower = currentUser.Email.ToLowerInvariant();
+
+            if (currentEmailLower != newEmailLower)
+            {
+                return await _unitOfWork.Users.IsEmailExistsAsync(newEmailLower, updatedUserDto.Id);
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Checks if an email address is already in use
+        /// </summary>
+        /// <param name="email">The email address to check</param>
+        /// <param name="excludeUserId">Optional user ID to exclude from the check</param>
+        /// <returns>True if email exists, false otherwise</returns>
         public async Task<bool> IsEmailExistsAsync(string email, int? excludeUserId = null)
         {
-            return await _unitOfWork.Users.IsEmailExistsAsync(email.ToLower(), excludeUserId);
-        }
-
-        private static bool IsPasswordValid(string password)
-        {
-            if (string.IsNullOrEmpty(password) || password.Length < 8)
-                return false;
-
-            // Check for at least one uppercase, one lowercase, and one digit
-            var hasUpperCase = Regex.IsMatch(password, @"[A-Z]");
-            var hasLowerCase = Regex.IsMatch(password, @"[a-z]");
-            var hasDigit = Regex.IsMatch(password, @"\d");
-
-            return hasUpperCase && hasLowerCase && hasDigit;
-        }
-
-        private static UserDto MapToDto(User user)
-        {
-            return new UserDto
-            {
-                Id = user.Id,
-                Email = user.Email,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                BirthDate = user.BirthDate,
-                CreatedAt = user.CreatedAt
-            };
+            return await _unitOfWork.Users.IsEmailExistsAsync(email.ToLowerInvariant(), excludeUserId);
         }
     }
 }
