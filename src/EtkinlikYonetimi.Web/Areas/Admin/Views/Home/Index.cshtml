@@ -1,0 +1,94 @@
+@{
+    ViewData["Title"] = "Ana Sayfa";
+    var currentUser = ViewBag.CurrentUser as UserDto;
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="jumbotron bg-primary text-white p-4 rounded mb-4">
+            <h1 class="display-4">
+                <i class="fas fa-home"></i> Hoş Geldiniz, @currentUser?.FullName!
+            </h1>
+            <p class="lead">Etkinlik Yönetim Paneline hoş geldiniz. Buradan etkinliklerinizi yönetebilir ve profilinizi güncelleyebilirsiniz.</p>
+            <hr class="my-4">
+            <p>Hızlı erişim için aşağıdaki bağlantıları kullanabilirsiniz.</p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card text-center h-100 shadow-sm">
+            <div class="card-body">
+                <div class="text-primary mb-3">
+                    <i class="fas fa-calendar-check fa-3x"></i>
+                </div>
+                <h5 class="card-title">Etkinlik Yönetimi</h5>
+                <p class="card-text">Etkinliklerinizi görüntüleyin, düzenleyin ve yeni etkinlikler ekleyin.</p>
+                <a asp-controller="EventManagement" asp-action="Index" class="btn btn-primary">
+                    <i class="fas fa-arrow-right"></i> Etkinliklere Git
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+        <div class="card text-center h-100 shadow-sm">
+            <div class="card-body">
+                <div class="text-success mb-3">
+                    <i class="fas fa-plus-circle fa-3x"></i>
+                </div>
+                <h5 class="card-title">Yeni Etkinlik</h5>
+                <p class="card-text">Hızlıca yeni bir etkinlik oluşturun ve yayınlayın.</p>
+                <a asp-controller="EventManagement" asp-action="Create" class="btn btn-success">
+                    <i class="fas fa-plus"></i> Etkinlik Ekle
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+        <div class="card text-center h-100 shadow-sm">
+            <div class="card-body">
+                <div class="text-info mb-3">
+                    <i class="fas fa-user-edit fa-3x"></i>
+                </div>
+                <h5 class="card-title">Profil Ayarları</h5>
+                <p class="card-text">Kişisel bilgilerinizi ve hesap ayarlarınızı güncelleyin.</p>
+                <a asp-controller="Profile" asp-action="Index" class="btn btn-info">
+                    <i class="fas fa-user"></i> Profili Düzenle
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> Hızlı Bilgiler</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-user"></i> Hesap Bilgileri</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Email:</strong> @currentUser?.Email</li>
+                            <li><strong>Ad Soyad:</strong> @currentUser?.FullName</li>
+                            <li><strong>Kayıt Tarihi:</strong> @currentUser?.CreatedAt.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("tr-TR"))</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-external-link-alt"></i> Hızlı Bağlantılar</h6>
+                        <ul class="list-unstyled">
+                            <li><a asp-area="" asp-controller="Home" asp-action="Index" class="text-decoration-none"><i class="fas fa-eye"></i> Siteyi Görüntüle</a></li>
+                            <li><a asp-area="" asp-controller="Event" asp-action="Calendar" class="text-decoration-none"><i class="fas fa-calendar"></i> Etkinlik Takvimi</a></li>
+                            <li><a asp-controller="Account" asp-action="Logout" class="text-decoration-none text-danger"><i class="fas fa-sign-out-alt"></i> Güvenli Çıkış</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
