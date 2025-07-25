@@ -3,56 +3,154 @@
     ViewData["Title"] = Model.PageTitle ?? "Etkinlikler";
 }
 
-<div class="text-center mb-4">
-    <h1 class="display-4 text-primary">@Model.PageTitle</h1>
-    <p class="lead">@Model.PageDescription</p>
-</div>
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="hero-content">
+        <div class="container">
+            <h1 class="hero-title fade-in">@Model.PageTitle</h1>
+            <p class="hero-subtitle fade-in">@Model.PageDescription</p>
+            <div class="hero-actions fade-in">
+                <a href="#events" class="btn btn-modern btn-lg me-3">
+                    <i class="fas fa-calendar-alt me-2"></i>
+                    Etkinlikleri Keşfet
+                </a>
+                <a asp-area="" asp-controller="Event" asp-action="Calendar" class="btn btn-outline-light btn-lg">
+                    <i class="fas fa-calendar-week me-2"></i>
+                    Takvimi Görüntüle
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
 
-@if (Model.Events.Any())
-{
-    <div class="row">
-        @foreach (var eventItem in Model.Events)
+<!-- Events Section -->
+<section id="events" class="py-5">
+    <div class="container">
+        @if (Model.Events.Any())
         {
-            <div class="col-md-6 col-lg-4 mb-4">
-                <div class="card h-100 shadow-sm">
-                    @if (!string.IsNullOrEmpty(eventItem.Image))
-                    {
-                        <img src="@eventItem.Image" class="card-img-top" alt="@eventItem.Title" style="height: 200px; object-fit: cover;">
-                    }
-                    else
-                    {
-                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-                            <i class="fas fa-calendar-alt fa-3x text-muted"></i>
+            <div class="row mb-4">
+                <div class="col-12 text-center">
+                    <h2 class="text-gradient mb-3">Yaklaşan Etkinlikler</h2>
+                    <p class="lead text-muted">Size özel seçilmiş etkinlikleri keşfedin</p>
+                </div>
+            </div>
+            
+            <div class="row g-4">
+                @foreach (var eventItem in Model.Events)
+                {
+                    <div class="col-lg-4 col-md-6 slide-up">
+                        <div class="event-card">
+                            @if (!string.IsNullOrEmpty(eventItem.Image))
+                            {
+                                <img src="@eventItem.Image" class="card-img-top" alt="@eventItem.Title">
+                            }
+                            else
+                            {
+                                <div class="card-img-top d-flex align-items-center justify-content-center" style="background: var(--gradient-primary); color: white;">
+                                    <div class="text-center">
+                                        <i class="fas fa-calendar-star fa-4x mb-3 opacity-75"></i>
+                                        <h6 class="text-white-50">Etkinlik Görseli</h6>
+                                    </div>
+                                </div>
+                            }
+                            <div class="card-body">
+                                <h5 class="card-title">@eventItem.Title</h5>
+                                <div class="event-date">
+                                    <i class="fas fa-clock"></i>
+                                    <span>@eventItem.StartDate.ToString("dd MMMM yyyy, HH:mm", new System.Globalization.CultureInfo("tr-TR"))</span>
+                                </div>
+                                @if (!string.IsNullOrEmpty(eventItem.ShortDescription))
+                                {
+                                    <p class="card-text">@eventItem.ShortDescription</p>
+                                }
+                                <div class="mt-auto pt-3">
+                                    <a asp-controller="Event" asp-action="Detail" asp-route-id="@eventItem.Id" class="btn btn-modern w-100">
+                                        <i class="fas fa-arrow-right me-2"></i>
+                                        Detayları Gör
+                                    </a>
+                                </div>
+                            </div>
                         </div>
-                    }
-                    <div class="card-body d-flex flex-column">
-                        <h5 class="card-title">@eventItem.Title</h5>
-                        <p class="card-text text-muted">
-                            <i class="fas fa-clock"></i> @eventItem.StartDate.ToString("dd MMMM yyyy, HH:mm", new System.Globalization.CultureInfo("tr-TR"))
-                        </p>
-                        @if (!string.IsNullOrEmpty(eventItem.ShortDescription))
-                        {
-                            <p class="card-text">@eventItem.ShortDescription</p>
-                        }
-                        <div class="mt-auto">
-                            <a asp-controller="Event" asp-action="Detail" asp-route-id="@eventItem.Id" class="btn btn-primary">Detayları Gör</a>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="row justify-content-center">
+                <div class="col-lg-6">
+                    <div class="text-center py-5">
+                        <div class="mb-4">
+                            <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
                         </div>
+                        <h3 class="text-gradient mb-3">Henüz Etkinlik Bulunmuyor</h3>
+                        <p class="text-muted mb-4">Şu anda görüntülenecek aktif etkinlik bulunmamaktadır. Yeni etkinlikler eklendiğinde burada görüntülenecektir.</p>
+                        <a asp-area="Admin" asp-controller="Account" asp-action="Login" class="btn btn-modern">
+                            <i class="fas fa-plus me-2"></i>
+                            Etkinlik Ekle
+                        </a>
                     </div>
                 </div>
             </div>
         }
     </div>
-}
-else
-{
-    <div class="text-center mt-5">
-        <div class="alert alert-info">
-            <h4>Henüz etkinlik bulunmuyor</h4>
-            <p>Şu anda görüntülenecek aktif etkinlik bulunmamaktadır.</p>
+</section>
+
+<!-- Features Section -->
+<section class="py-5" style="background: var(--light-bg);">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-12">
+                <h2 class="text-gradient mb-3">Neden Bizimle?</h2>
+                <p class="lead text-muted">Modern etkinlik yönetimi deneyimi</p>
+            </div>
+        </div>
+        <div class="row g-4">
+            <div class="col-lg-4 col-md-6">
+                <div class="admin-card text-center h-100">
+                    <div class="mb-3">
+                        <i class="fas fa-rocket fa-3x text-gradient"></i>
+                    </div>
+                    <h5>Kolay Yönetim</h5>
+                    <p class="text-muted">Etkinliklerinizi kolayca oluşturun, düzenleyin ve yönetin.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="admin-card text-center h-100">
+                    <div class="mb-3">
+                        <i class="fas fa-calendar-check fa-3x text-gradient"></i>
+                    </div>
+                    <h5>Takvim Entegrasyonu</h5>
+                    <p class="text-muted">Tüm etkinliklerinizi tek bir takvimde görüntüleyin.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="admin-card text-center h-100">
+                    <div class="mb-3">
+                        <i class="fas fa-mobile-alt fa-3x text-gradient"></i>
+                    </div>
+                    <h5>Mobil Uyumlu</h5>
+                    <p class="text-muted">Her cihazda mükemmel görünüm ve kullanım deneyimi.</p>
+                </div>
+            </div>
         </div>
     </div>
-}
+</section>
 
 @section Scripts {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script>
+        // Smooth scroll for hero button
+        document.addEventListener('DOMContentLoaded', function() {
+            const heroBtn = document.querySelector('a[href="#events"]');
+            if (heroBtn) {
+                heroBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.querySelector('#events').scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            }
+        });
+    </script>
 }
